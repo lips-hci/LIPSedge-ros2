@@ -1,7 +1,7 @@
 # ROS2 wrapper for OpenNI2 using LIPSedge 3D camera
 
 ## Introduction
-Please read original [README](README.txt) from ROS.
+Please read original [README](README-from-ROS.md) from ROS.
 
 - ROS1:
 Please check our repository [LIPSedge-ros](https://github.com/lips-hci/LIPSedge-ros) for installation guide.

@@ -1,52 +1,72 @@
-# openni2_camera
+# ROS2 wrapper for OpenNI2 using LIPSedge 3D camera
 
 ## Introduction
-ROS wrapper for openni 2.0
+Please read original [README](README.txt) from ROS.
 
-Note: openni2_camera supports xtion devices, but not kinects. For using a kinect with ROS, try the freenect stack: http://www.ros.org/wiki/freenect_stack
-
-## Contribution
-
-Branching:
 - ROS1:
-   - Latest: [ros1](https://github.com/ros-drivers/openni2_camera/tree/ros1)
-   - For ROS [Jade](http://wiki.ros.org/jade), [Indigo](http://wiki.ros.org/indigo) or earlier: [indigo-devel](https://github.com/ros-drivers/openni2_camera/tree/indigo-devel)
-- ROS2:
-   - The [ros2](https://github.com/ros-drivers/openni2_camera/tree/ros2) branch supports Humble and later
-   - openni2_launch has NOT been ported since proper lazy subscribers are still not possible in ROS2
+Please check our repository [LIPSedge-ros](https://github.com/lips-hci/LIPSedge-ros) for installation guide.
 
-## Developer document
-   - [docs.ros.org/openni2_launch](http://docs.ros.org/en/melodic/api/openni2_launch/html/)
-   - Source of the doc: [openni2_launch/doc](./openni2_launch/doc/)
+- ROS2: ros2 branch supports Humble and later. We have tested LIPSedge cameras on Humble.
 
-## Running ROS2 Driver
+If you have any request or need any support, welcome to mail LIPS or submit your request here.
 
-An example launch exists that loads just the camera component:
+## Installation
+
+ * Install openni2 package for Ubuntu
+ ```
+ $ sudo apt-get install libopenni2-0 libopenni2-dev
+ ```
+ 
+ * Download latest [LIPSedge SDK](https://www.lips-hci.com/lipssdk) and install it
+
+For example, you get LIPSedge DL SDK and install it. 
+```
+$ tar -xzf LIPS-Linux-x64-OpenNI2.2.tar.gz
+$ cd LIPS-Linux-x64-OpenNI2.2
+$ sudo ./install.sh
+```
+## Build and launch this ROS2 Driver
+
+Clone this repository and build it in ROS2 environment
 
 ```
-ros2 launch openni2_camera camera_only.launch.py
+$ mkdir -p ~/LIPSedge_ws/src
+$ cd ~/LIPSedge_ws/src
+$ git clone https://github.com/lips-hci/LIPSedge-ros2
+$ colcon build
 ```
 
-If you want to get a PointCloud2, use:
+Launch camera service, use:
+
+```
+$ ros2 launch openni2_camera camera_only.launch.py
+```
+
+View depth/color/IR image by rqt, use:
+
+```
+$ rqt_image_view
+```
+
+Select topic */camera/depth/image_raw* in rqt:
+
+<img style="float: right;" src="ros2_rqt-image-view_depth.png" width="400">
+
+Select topic */camera/rgb/image_raw* in rqt:
+
+<img style="float: right;" src="ros2_rqt-image-view_color.png" width="400">
+
+## Visualize PointCloud2 data
+
+If you want to get a PointCloud2, launch camera with another script:
 
 ```
 ros2 launch openni2_camera camera_with_cloud.launch.py
 ```
 
-## Migration from ROS1
+* Run Rviz tool in ROS2. In the left panel, manually type 'openni_rgb_optical_frame' to the field **Global Options -> Fixed Frame**.
+* Add **PointCloud2** and change the field **Topic -> Reliablity Policy** to 'Best Effort'.
 
- * The rgb/image topic has been renamed to rgb/image_raw for consistency.
- * The nodelet has been refactored into an rclcpp component called
-   "openni2_wrapper::OpenNI2Driver". See the launch folder for an example
-   of how to start this.
- * Since most components in image_proc/depth_image_proc lack lazy pub/sub,
-   the advanced processing graphs in rgbd_launch and openni2_launch are not
-   currently feasible. It is recommended to create a launch file with the
-   specific pipeline you want. See the launch folder for an example.
+In the right panel, you should see visualized point cloud data.
 
-## Known Issues
-
- * There are currently no subscriber connect/disconnect callbacks in ROS2.
-   This package implements a lazy publisher by running a 1Hz update loop
-   and seeing if there are new subscribers.
- * Using "use_device_time" is currently broken.
+<img src="ros2_rviz_cloud.png" width="900">

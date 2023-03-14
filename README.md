@@ -39,6 +39,7 @@ $ colcon build
 Launch camera service, use:
 
 ```
+$ source ./install/setup.bash
 $ ros2 launch openni2_camera camera_only.launch.py
 ```
 
@@ -61,11 +62,15 @@ Select topic */camera/rgb/image_raw* in rqt:
 If you want to get a PointCloud2, launch camera with another script:
 
 ```
-ros2 launch openni2_camera camera_with_cloud.launch.py
+$ source ./install/setup.bash
+$ ros2 launch openni2_camera camera_with_cloud.launch.py
 ```
 
-* Run Rviz tool in ROS2. In the left panel, manually type 'openni_rgb_optical_frame' to the field **Global Options -> Fixed Frame**.
-* Add **PointCloud2** and change the field **Topic -> Reliablity Policy** to 'Best Effort'.
+* Run Rviz tool in ROS2.
+* Add **PointCloud2** and change the field **Topic -> Reliablity Policy** to '*Best Effort*'.
+* In the left panel, manually change the field **Global Options -> Fixed Frame** to '*openni_rgb_optical_frame*'.
+
+<img src="ros2_rviz_add_pointcloud2.png" width="900">
 
 In the right panel, you should see visualized point cloud data.
 

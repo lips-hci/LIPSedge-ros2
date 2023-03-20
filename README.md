@@ -33,6 +33,7 @@ Clone this repository and build it in ROS2 environment
 $ mkdir -p ~/LIPSedge_ws/src
 $ cd ~/LIPSedge_ws/src
 $ git clone https://github.com/lips-hci/LIPSedge-ros2
+$ cd ~/LIPSedge_ws
 $ colcon build
 ```
 

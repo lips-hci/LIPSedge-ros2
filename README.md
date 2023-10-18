@@ -47,7 +47,7 @@ $ ros2 launch openni2_camera camera_only.launch.py
 View depth/color/IR image by rqt, use:
 
 ```
-$ rqt_image_view
+$ ros2 run rqt_image_view rqt_image_view
 ```
 
 Select topic */camera/depth/image_raw* in rqt:

@@ -118,9 +118,22 @@ public:
   void setColorFrameCallback(FrameCallbackFunction callback);
   void setDepthFrameCallback(FrameCallbackFunction callback);
 
-  float getIRFocalLength (int output_y_resolution) const;
-  float getColorFocalLength (int output_y_resolution) const;
-  float getDepthFocalLength (int output_y_resolution) const;
+  double getIRFocalLengthX () const;
+  double getColorFocalLengthX () const;
+  double getDepthFocalLengthX () const;
+
+  double getIRFocalLengthY () const;
+  double getColorFocalLengthY () const;
+  double getDepthFocalLengthY () const;
+
+  double getIRPrincipalPointX () const;
+  double getColorPrincipalPointX () const;
+  double getDepthPrincipalPointX () const;
+
+  double getIRPrincipalPointY () const;
+  double getColorPrincipalPointY () const;
+  double getDepthPrincipalPointY () const;
+
   float getBaseline () const;
 
   void setAutoExposure(bool enable);

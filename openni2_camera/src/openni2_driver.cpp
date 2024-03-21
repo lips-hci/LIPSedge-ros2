@@ -1062,6 +1062,13 @@ void OpenNI2Driver::genVideoModeTableMap()
   video_mode.frame_rate_ = 30;
 
   video_modes_lookup_["UXGA_30Hz"] = video_mode;
+
+  // LIPSedge-I_720P_30Hz
+  video_mode.x_resolution_ = 1080;
+  video_mode.y_resolution_ = 720;
+  video_mode.frame_rate_ = 30;
+
+  video_modes_lookup_["720P_30Hz"] = video_mode;
 }
 
 bool OpenNI2Driver::lookupVideoMode(const std::string& mode, OpenNI2VideoMode& video_mode)

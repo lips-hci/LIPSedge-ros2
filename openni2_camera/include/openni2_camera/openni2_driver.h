@@ -63,7 +63,7 @@ private:
   void newDepthFrameCallback(sensor_msgs::msg::Image::SharedPtr image);
 
   // Methods to get calibration parameters for the various cameras
-  sensor_msgs::msg::CameraInfo::SharedPtr getDefaultCameraInfo(int width, int height, double f) const;
+  sensor_msgs::msg::CameraInfo::SharedPtr getDefaultCameraInfo(int width, int height, double fx, double fy, double cx, double cy) const;
   sensor_msgs::msg::CameraInfo::SharedPtr getColorCameraInfo(int width, int height, rclcpp::Time time) const;
   sensor_msgs::msg::CameraInfo::SharedPtr getIRCameraInfo(int width, int height, rclcpp::Time time) const;
   sensor_msgs::msg::CameraInfo::SharedPtr getDepthCameraInfo(int width, int height, rclcpp::Time time) const;

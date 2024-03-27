@@ -596,7 +596,7 @@ void OpenNI2Driver::newDepthFrameCallback(sensor_msgs::msg::Image::SharedPtr ima
 }
 
 // Methods to get calibration parameters for the various cameras
-sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getDefaultCameraInfo(int width, int height, double f) const
+sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getDefaultCameraInfo(int width, int height, double fx, double fy, double cx, double cy) const
 {
   sensor_msgs::msg::CameraInfo::SharedPtr info = std::make_shared<sensor_msgs::msg::CameraInfo>();
 
@@ -609,11 +609,10 @@ sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getDefaultCameraInfo(int 
 
   // Simple camera matrix: square pixels (fx = fy), principal point at center
   info->k.fill(0.0);
-  info->k[0] = info->k[4] = f;
-  info->k[2] = (width / 2) - 0.5;
-  // Aspect ratio for the camera center on Kinect (and other devices?) is 4/3
-  // This formula keeps the principal point the same in VGA and SXGA modes
-  info->k[5] = (width * (3./8.)) - 0.5;
+  info->k[0] = fx;
+  info->k[4] = fy;
+  info->k[2] = cx;
+  info->k[5] = cy;
   info->k[8] = 1.0;
 
   // No separate rectified image plane, so R = I
@@ -622,7 +621,8 @@ sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getDefaultCameraInfo(int 
 
   // Then P=K(I|0) = (K|0)
   info->p.fill(0.0);
-  info->p[0]  = info->p[5] = f; // fx, fy
+  info->p[0] = info->k[0];      // fx
+  info->p[5] = info->k[4];      // fy
   info->p[2]  = info->k[2];     // cx
   info->p[6]  = info->k[5];     // cy
   info->p[10] = 1.0;
@@ -642,13 +642,15 @@ sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getColorCameraInfo(int wi
     {
       // Use uncalibrated values
       RCLCPP_WARN_ONCE(this->get_logger(), "Image resolution doesn't match calibration of the RGB camera. Using default parameters.");
-      info = getDefaultCameraInfo(width, height, device_->getColorFocalLength(height));
+      info = getDefaultCameraInfo(width, height, device_->getColorFocalLengthX(), device_->getColorFocalLengthY(),
+                                  device_->getColorPrincipalPointX(), device_->getColorPrincipalPointY());
     }
   }
   else
   {
     // If uncalibrated, fill in default values
-    info = getDefaultCameraInfo(width, height, device_->getColorFocalLength(height));
+    info = getDefaultCameraInfo(width, height, device_->getColorFocalLengthX(), device_->getColorFocalLengthY(),
+                                device_->getColorPrincipalPointX(), device_->getColorPrincipalPointY());
   }
 
   // Fill in header
@@ -670,13 +672,15 @@ sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getIRCameraInfo(int width
     {
       // Use uncalibrated values
       RCLCPP_WARN_ONCE(this->get_logger(), "Image resolution doesn't match calibration of the IR camera. Using default parameters.");
-      info = getDefaultCameraInfo(width, height, device_->getIRFocalLength(height));
+      info = getDefaultCameraInfo(width, height, device_->getIRFocalLengthX(), device_->getIRFocalLengthY(),
+                                  device_->getIRPrincipalPointX(), device_->getIRPrincipalPointY());
     }
   }
   else
   {
     // If uncalibrated, fill in default values
-    info = getDefaultCameraInfo(width, height, device_->getDepthFocalLength(height));
+    info = getDefaultCameraInfo(width, height, device_->getDepthFocalLengthX(), device_->getDepthFocalLengthY(),
+                                device_->getDepthPrincipalPointX(), device_->getDepthPrincipalPointY());
   }
 
   // Fill in header
@@ -689,19 +693,8 @@ sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getIRCameraInfo(int width
 sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getDepthCameraInfo(int width, int height, rclcpp::Time time) const
 {
   // The depth image has essentially the same intrinsics as the IR image, BUT the
-  // principal point is offset by half the size of the hardware correlation window
-  // (probably 9x9 or 9x7 in 640x480 mode). See http://www.ros.org/wiki/kinect_calibration/technical
-
-  double scaling = (double)width / 640;
-
-  sensor_msgs::msg::CameraInfo::SharedPtr info = getIRCameraInfo(width, height, time);
-  info->k[2] -= depth_ir_offset_x_*scaling; // cx
-  info->k[5] -= depth_ir_offset_y_*scaling; // cy
-  info->p[2] -= depth_ir_offset_x_*scaling; // cx
-  info->p[6] -= depth_ir_offset_y_*scaling; // cy
-
   /// @todo Could put this in projector frame so as to encode the baseline in P[3]
-  return info;
+  return getIRCameraInfo(width, height, time);
 }
 
 sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getProjectorCameraInfo(int width, int height, rclcpp::Time time) const
@@ -1069,6 +1062,13 @@ void OpenNI2Driver::genVideoModeTableMap()
   video_mode.frame_rate_ = 30;
 
   video_modes_lookup_["UXGA_30Hz"] = video_mode;
+
+  // LIPSedge-I_720P_30Hz
+  video_mode.x_resolution_ = 1080;
+  video_mode.y_resolution_ = 720;
+  video_mode.frame_rate_ = 30;
+
+  video_modes_lookup_["720P_30Hz"] = video_mode;
 }
 
 bool OpenNI2Driver::lookupVideoMode(const std::string& mode, OpenNI2VideoMode& video_mode)

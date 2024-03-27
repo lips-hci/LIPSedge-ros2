@@ -29,7 +29,7 @@
  *      Author: Julius Kammerl (jkammerl@willowgarage.com)
  */
 
-#include "OpenNI.h"
+#include <OpenNI.h>
 #include <PS1080.h> // For XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE property
 
 #include "openni2_camera/openni2_device.h"
@@ -41,6 +41,12 @@
 
 namespace openni2_wrapper
 {
+
+#define LIPS_STREAM_PROPERTY_FOCAL_LENGTH_X     200
+#define LIPS_STREAM_PROPERTY_FOCAL_LENGTH_Y     201
+#define LIPS_STREAM_PROPERTY_PRINCIPAL_POINT_X  202
+#define LIPS_STREAM_PROPERTY_PRINCIPAL_POINT_Y  203
+
 
 void replace_all(std::string &input, const std::string &search, const std::string &replace)
 {
@@ -134,43 +140,152 @@ bool OpenNI2Device::isValid() const
   return (openni_device_.get() != 0) && openni_device_->isValid();
 }
 
-float OpenNI2Device::getIRFocalLength(int output_y_resolution) const
+double OpenNI2Device::getIRFocalLengthX() const
 {
-  float focal_length = 0.0f;
+  double focal_length = 0.0;
   std::shared_ptr<openni::VideoStream> stream = getIRVideoStream();
 
   if (stream)
   {
-    focal_length = (float)output_y_resolution / (2 * tan(stream->getVerticalFieldOfView() / 2));
+    stream->getProperty(LIPS_STREAM_PROPERTY_FOCAL_LENGTH_X, &focal_length);
   }
 
   return focal_length;
 }
-
-float OpenNI2Device::getColorFocalLength(int output_y_resolution) const
+double OpenNI2Device::getColorFocalLengthX() const
 {
-  float focal_length = 0.0f;
+  double focal_length = 0.0;
   std::shared_ptr<openni::VideoStream> stream = getColorVideoStream();
 
   if (stream)
   {
-    focal_length = (float)output_y_resolution / (2 * tan(stream->getVerticalFieldOfView() / 2));
+    stream->getProperty(LIPS_STREAM_PROPERTY_FOCAL_LENGTH_X, &focal_length);
+  }
+
+  return focal_length;
+}
+double OpenNI2Device::getDepthFocalLengthX() const
+{
+  double focal_length = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getDepthVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_FOCAL_LENGTH_X, &focal_length);
   }
 
   return focal_length;
 }
 
-float OpenNI2Device::getDepthFocalLength(int output_y_resolution) const
+double OpenNI2Device::getIRFocalLengthY() const
 {
-  float focal_length = 0.0f;
+  double focal_length = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getIRVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_FOCAL_LENGTH_Y, &focal_length);
+  }
+
+  return focal_length;
+}
+double OpenNI2Device::getColorFocalLengthY() const
+{
+  double focal_length = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getColorVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_FOCAL_LENGTH_Y, &focal_length);
+  }
+
+  return focal_length;
+}
+double OpenNI2Device::getDepthFocalLengthY() const
+{
+  double focal_length = 0.0;
   std::shared_ptr<openni::VideoStream> stream = getDepthVideoStream();
 
   if (stream)
   {
-    focal_length = (float)output_y_resolution / (2 * tan(stream->getVerticalFieldOfView() / 2));
+    stream->getProperty(LIPS_STREAM_PROPERTY_FOCAL_LENGTH_Y, &focal_length);
   }
 
   return focal_length;
+}
+
+double OpenNI2Device::getIRPrincipalPointX() const
+{
+  double principal_point = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getIRVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_PRINCIPAL_POINT_X, &principal_point);
+  }
+
+  return principal_point;
+}
+double OpenNI2Device::getColorPrincipalPointX() const
+{
+  double principal_point = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getColorVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_PRINCIPAL_POINT_X, &principal_point);
+  }
+
+  return principal_point;
+}
+double OpenNI2Device::getDepthPrincipalPointX() const
+{
+  double principal_point = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getDepthVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_PRINCIPAL_POINT_X, &principal_point);
+  }
+
+  return principal_point;
+}
+
+double OpenNI2Device::getIRPrincipalPointY() const
+{
+  double principal_point = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getIRVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_PRINCIPAL_POINT_Y, &principal_point);
+  }
+
+  return principal_point;
+}
+double OpenNI2Device::getColorPrincipalPointY() const
+{
+  double principal_point = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getColorVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_PRINCIPAL_POINT_Y, &principal_point);
+  }
+
+  return principal_point;
+}
+double OpenNI2Device::getDepthPrincipalPointY() const
+{
+  double principal_point = 0.0;
+  std::shared_ptr<openni::VideoStream> stream = getDepthVideoStream();
+
+  if (stream)
+  {
+    stream->getProperty(LIPS_STREAM_PROPERTY_PRINCIPAL_POINT_Y, &principal_point);
+  }
+
+  return principal_point;
 }
 
 float OpenNI2Device::getBaseline() const

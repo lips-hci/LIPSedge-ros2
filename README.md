@@ -6,12 +6,12 @@
 5. [Troubleshooting](Troubleshooting.md)
 
 ## Introduction
-Please read original [README](README-from-ROS.md) from ROS.
+Please read original [README](README-iron.md) from repo [ros-driver](https://github.com/ros-drivers/openni2_camera).
 
 - ROS1:
 Please check our repository [LIPSedge-ros](https://github.com/lips-hci/LIPSedge-ros) for installation guide.
 
-- ROS2: ros2 branch supports Humble and later. We have tested LIPSedge cameras on Humble.
+- ROS2: ros2 branch supports Humble to Iron. We have tested LIPSedge cameras on Humble.
 
 If you have any request or need any support, welcome to mail LIPS or submit your request here.
 

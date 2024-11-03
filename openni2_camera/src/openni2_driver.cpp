@@ -212,7 +212,52 @@ rcl_interfaces::msg::SetParametersResult OpenNI2Driver::paramCb(
 {
   auto result = rcl_interfaces::msg::SetParametersResult();
 
-  RCLCPP_WARN(this->get_logger(), "parameter change callback");
+  // Assume success until we fail
+  result.successful = true;
+
+  // Apply parameters
+  for (const auto & param : parameters)
+  {
+    if (param.get_name() == "z_offset_mm")
+    {
+      z_offset_mm_ = param.as_int();
+    }
+    else if (param.get_name() == "z_scaling")
+    {
+      z_scaling_ = param.as_double();
+    }
+    else if (param.get_name() == "ir_time_offset")
+    {
+      ir_time_offset_ = param.as_double();
+    }
+    else if (param.get_name() == "color_time_offset")
+    {
+      color_time_offset_ = param.as_double();
+    }
+    else if (param.get_name() == "depth_time_offset")
+    {
+      depth_time_offset_ = param.as_double();
+    }
+    else if (param.get_name() == "auto_exposure")
+    {
+      auto_exposure_ = param.as_bool();
+    }
+    else if (param.get_name() == "auto_white_balance")
+    {
+      auto_white_balance_ = param.as_bool();
+    }
+    else if (param.get_name() == "exposure")
+    {
+      exposure_ = param.as_int();
+    }
+    else
+    {
+      RCLCPP_WARN(this->get_logger(), "Parameter %s is not settable", param.get_name().c_str());
+      result.successful = false;
+    }
+  }
+
+  applyConfigToOpenNIDevice();
   return result;
 }
 

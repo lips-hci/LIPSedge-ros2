@@ -273,11 +273,7 @@ void OpenNI2Driver::applyConfigToOpenNIDevice()
   {
     try
     {
-      //if (!config_init_ || (old_config_.depth_registration != depth_registration_))
-      if (depth_registration_)
-      {
-        device_->setImageRegistrationMode(depth_registration_);
-      }
+      device_->setImageRegistrationMode(depth_registration_);
     }
     catch (const OpenNI2Exception& exception)
     {
@@ -287,9 +283,7 @@ void OpenNI2Driver::applyConfigToOpenNIDevice()
 
   try
   {
-    //if (!config_init_ || (old_config_.color_depth_synchronization != color_depth_synchronization_))
-    if (color_depth_synchronization_)
-      device_->setDepthColorSync(color_depth_synchronization_);
+    device_->setDepthColorSync(color_depth_synchronization_);
   }
   catch (const OpenNI2Exception& exception)
   {
@@ -298,9 +292,7 @@ void OpenNI2Driver::applyConfigToOpenNIDevice()
 
   try
   {
-    //if (!config_init_ || (old_config_.auto_exposure != auto_exposure_))
-    if (auto_exposure_)
-      device_->setAutoExposure(auto_exposure_);
+    device_->setAutoExposure(auto_exposure_);
   }
   catch (const OpenNI2Exception& exception)
   {
@@ -309,34 +301,37 @@ void OpenNI2Driver::applyConfigToOpenNIDevice()
 
   try
   {
-    //if (!config_init_ || (old_config_.auto_white_balance != auto_white_balance_))
-    if (auto_white_balance_)
-      device_->setAutoWhiteBalance(auto_white_balance_);
+    device_->setAutoWhiteBalance(auto_white_balance_);
   }
   catch (const OpenNI2Exception& exception)
   {
     RCLCPP_ERROR(this->get_logger(), "Could not set auto white balance. Reason: %s", exception.what());
   }
 
-  // Workaound for https://github.com/ros-drivers/openni2_camera/issues/51
-  // This is only needed when any of the 3 setting change.  For simplicity
-  // this check is always performed and exposure set.
-  if( (!auto_exposure_ && !auto_white_balance_) && exposure_ != 0 )
+  if (!auto_exposure_)
   {
-    RCLCPP_INFO_STREAM(this->get_logger(), "Forcing exposure set, when auto exposure/white balance disabled");
-    forceSetExposure();
-  }
-  else
-  {
-    // Setting the exposure the old way, although this should not have an effect
-    try
+    if (!auto_white_balance_ && exposure_ != 0)
     {
-      //if (!config_init_ || (old_config_.exposure != exposure_))
-      device_->setExposure(exposure_);
+      // Workaound for https://github.com/ros-drivers/openni2_camera/issues/51
+      // This is only needed when any of the 3 setting change.  For simplicity
+      // this check is always performed and exposure set.
+      RCLCPP_INFO_STREAM(this->get_logger(), "Forcing exposure set, when auto exposure/white balance disabled");
+      forceSetExposure();
     }
-    catch (const OpenNI2Exception& exception)
+    else
     {
-      RCLCPP_ERROR(this->get_logger(), "Could not set exposure. Reason: %s", exception.what());
+      // Setting the exposure the old way, although this should not have an effect
+      try
+      {
+        if (exposure_ != 0)
+        {
+          device_->setExposure(exposure_);
+        }
+      }
+      catch (const OpenNI2Exception& exception)
+      {
+        RCLCPP_ERROR(this->get_logger(), "Could not set exposure. Reason: %s", exception.what());
+      }
     }
   }
 

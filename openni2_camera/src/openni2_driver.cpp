@@ -44,9 +44,6 @@ using namespace std::chrono_literals;
 OpenNI2Driver::OpenNI2Driver(const rclcpp::NodeOptions & node_options) :
     Node("openni2_camera", node_options),
     device_manager_(OpenNI2DeviceManager::getSingelton()),
-    data_skip_ir_counter_(0),
-    data_skip_color_counter_(0),
-    data_skip_depth_counter_ (0),
     ir_subscribers_(false),
     color_subscribers_(false),
     depth_subscribers_(false),
@@ -55,23 +52,12 @@ OpenNI2Driver::OpenNI2Driver(const rclcpp::NodeOptions & node_options) :
     serialnumber_as_name_(false)
 {
   // Declare parameters
-  depth_ir_offset_x_ = declare_parameter<double>("depth_ir_offset_x", 5.0);
-  depth_ir_offset_y_ = declare_parameter<double>("depth_ir_offset_y", 4.0);
-
-  z_offset_mm_ = declare_parameter<int>("z_offset_mm", 0);
-  z_scaling_ = declare_parameter<double>("z_scaling", 1.0);
-
-  ir_time_offset_ = declare_parameter<double>("ir_time_offset", -0.033);
-  color_time_offset_ = declare_parameter<double>("color_time_offset", -0.033);
-  depth_time_offset_ = declare_parameter<double>("depth_time_offset", -0.033);
-
   depth_registration_ = declare_parameter<bool>("depth_registration", true);
   color_depth_synchronization_ = declare_parameter<bool>("color_depth_synchronization", false);
   auto_exposure_ = declare_parameter<bool>("auto_exposure", true);
   auto_white_balance_ = declare_parameter<bool>("auto_white_balance", true);
   use_device_time_ = declare_parameter<bool>("use_device_time", true);
   exposure_ = declare_parameter<int>("exposure", 0);
-  data_skip_ = declare_parameter<int>("data_skip", 0) + 1;
   enable_reconnect_ = declare_parameter<bool>("enable_reconnect", true);
 
   ir_frame_id_ = declare_parameter<std::string>("ir_frame_id", "openni_ir_optical_frame");
@@ -218,27 +204,7 @@ rcl_interfaces::msg::SetParametersResult OpenNI2Driver::paramCb(
   // Apply parameters
   for (const auto & param : parameters)
   {
-    if (param.get_name() == "z_offset_mm")
-    {
-      z_offset_mm_ = param.as_int();
-    }
-    else if (param.get_name() == "z_scaling")
-    {
-      z_scaling_ = param.as_double();
-    }
-    else if (param.get_name() == "ir_time_offset")
-    {
-      ir_time_offset_ = param.as_double();
-    }
-    else if (param.get_name() == "color_time_offset")
-    {
-      color_time_offset_ = param.as_double();
-    }
-    else if (param.get_name() == "depth_time_offset")
-    {
-      depth_time_offset_ = param.as_double();
-    }
-    else if (param.get_name() == "auto_exposure")
+    if (param.get_name() == "auto_exposure")
     {
       auto_exposure_ = param.as_bool();
     }
@@ -306,10 +272,6 @@ void OpenNI2Driver::setDepthVideoMode(const OpenNI2VideoMode& depth_video_mode)
 
 void OpenNI2Driver::applyConfigToOpenNIDevice()
 {
-  data_skip_ir_counter_ = 0;
-  data_skip_color_counter_= 0;
-  data_skip_depth_counter_ = 0;
-
   setIRVideoMode(ir_video_mode_);
   setColorVideoMode(color_video_mode_);
   setDepthVideoMode(depth_video_mode_);
@@ -534,17 +496,12 @@ void OpenNI2Driver::newIRFrameCallback(sensor_msgs::msg::Image::SharedPtr image)
     return;
   }
 
-  if ((++data_skip_ir_counter_)%data_skip_==0)
+  if (ir_subscribers_)
   {
-    data_skip_ir_counter_ = 0;
+    image->header.frame_id = ir_frame_id_;
+    image->header.stamp = rclcpp::Time(image->header.stamp);
 
-    if (ir_subscribers_)
-    {
-      image->header.frame_id = ir_frame_id_;
-      image->header.stamp = rclcpp::Time(image->header.stamp) + rclcpp::Duration::from_seconds(ir_time_offset_);
-
-      pub_ir_.publish(image, getIRCameraInfo(image->width, image->height, image->header.stamp));
-    }
+    pub_ir_.publish(image, getIRCameraInfo(image->width, image->height, image->header.stamp));
   }
 }
 
@@ -556,17 +513,12 @@ void OpenNI2Driver::newColorFrameCallback(sensor_msgs::msg::Image::SharedPtr ima
     return;
   }
 
-  if ((++data_skip_color_counter_)%data_skip_==0)
+  if (color_subscribers_)
   {
-    data_skip_color_counter_ = 0;
+    image->header.frame_id = color_frame_id_;
+    image->header.stamp = rclcpp::Time(image->header.stamp);
 
-    if (color_subscribers_)
-    {
-      image->header.frame_id = color_frame_id_;
-      image->header.stamp = rclcpp::Time(image->header.stamp) + rclcpp::Duration::from_seconds(color_time_offset_);
-
-      pub_color_.publish(image, getColorCameraInfo(image->width, image->height, image->header.stamp));
-    }
+    pub_color_.publish(image, getColorCameraInfo(image->width, image->height, image->header.stamp));
   }
 }
 
@@ -578,59 +530,37 @@ void OpenNI2Driver::newDepthFrameCallback(sensor_msgs::msg::Image::SharedPtr ima
     return;
   }
 
-  if ((++data_skip_depth_counter_)%data_skip_==0)
+  if (depth_raw_subscribers_||depth_subscribers_||projector_info_subscribers_)
   {
+    image->header.stamp = rclcpp::Time(image->header.stamp);
 
-    data_skip_depth_counter_ = 0;
+    sensor_msgs::msg::CameraInfo::SharedPtr cam_info;
 
-    if (depth_raw_subscribers_||depth_subscribers_||projector_info_subscribers_)
+    if (depth_registration_)
     {
-      image->header.stamp = rclcpp::Time(image->header.stamp) + rclcpp::Duration::from_seconds(depth_time_offset_);
+      image->header.frame_id = color_frame_id_;
+      cam_info = getColorCameraInfo(image->width,image->height, image->header.stamp);
+    } else
+    {
+      image->header.frame_id = depth_frame_id_;
+      cam_info = getDepthCameraInfo(image->width,image->height, image->header.stamp);
+    }
 
-      if (z_offset_mm_ != 0)
-      {
-        uint16_t* data = reinterpret_cast<uint16_t*>(&image->data[0]);
-        for (unsigned int i = 0; i < image->width * image->height; ++i)
-          if (data[i] != 0)
-                data[i] += z_offset_mm_;
-      }
+    if (depth_raw_subscribers_)
+    {
+      pub_depth_raw_.publish(image, cam_info);
+    }
 
-      if (fabs(z_scaling_ - 1.0) > 1e-6)
-      {
-        uint16_t* data = reinterpret_cast<uint16_t*>(&image->data[0]);
-        for (unsigned int i = 0; i < image->width * image->height; ++i)
-          if (data[i] != 0)
-                data[i] = static_cast<uint16_t>(data[i] * z_scaling_);
-      }
+    if (depth_subscribers_ )
+    {
+      sensor_msgs::msg::Image::ConstSharedPtr floating_point_image = rawToFloatingPointConversion(image);
+      pub_depth_.publish(floating_point_image, cam_info);
+    }
 
-      sensor_msgs::msg::CameraInfo::SharedPtr cam_info;
-
-      if (depth_registration_)
-      {
-        image->header.frame_id = color_frame_id_;
-        cam_info = getColorCameraInfo(image->width,image->height, image->header.stamp);
-      } else
-      {
-        image->header.frame_id = depth_frame_id_;
-        cam_info = getDepthCameraInfo(image->width,image->height, image->header.stamp);
-      }
-
-      if (depth_raw_subscribers_)
-      {
-        pub_depth_raw_.publish(image, cam_info);
-      }
-
-      if (depth_subscribers_ )
-      {
-        sensor_msgs::msg::Image::ConstSharedPtr floating_point_image = rawToFloatingPointConversion(image);
-        pub_depth_.publish(floating_point_image, cam_info);
-      }
-
-      // Projector "info" probably only useful for working with disparity images
-      if (projector_info_subscribers_)
-      {
-        pub_projector_info_->publish(*getProjectorCameraInfo(image->width, image->height, image->header.stamp));
-      }
+    // Projector "info" probably only useful for working with disparity images
+    if (projector_info_subscribers_)
+    {
+      pub_projector_info_->publish(*getProjectorCameraInfo(image->width, image->height, image->header.stamp));
     }
   }
 }

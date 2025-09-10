@@ -1,4 +1,9 @@
 # ROS2 wrapper for OpenNI2 using LIPSedge 3D camera
+1. [Introduction](README.md#Introduction)
+2. [Installation](README.md#Installation)
+3. [Build and launch](README.md#Build-and-launch-this-ROS2-Driver)
+4. [Visualize PointCloud2](README.md#Visualize-PointCloud2-data)
+5. [Troubleshooting](Troubleshooting.md)
 
 ## Introduction
 Please read original [README](README-from-ROS.md) from ROS.

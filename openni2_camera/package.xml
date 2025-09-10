@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>openni2_camera</name>
-  <version>2.0.1</version>
+  <version>2.0.3</version>
   <description>Drivers for the Asus Xtion and Primesense Devices. For using a kinect
   with ROS, try the <a href="http://wiki.ros.org/freenect_stack">freenect stack</a> 
   </description>
@@ -22,6 +22,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>image_transport</depend>
+  <exec_depend>depth_image_proc</exec_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>

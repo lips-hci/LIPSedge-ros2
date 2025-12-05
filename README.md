@@ -1,4 +1,4 @@
-<img width="1224" height="228" alt="check_link_in_openni2_driver_repo" src="https://github.com/user-attachments/assets/cf479d07-b7ce-4d8a-9801-917252265f3d" /># ROS2 wrapper for OpenNI2 using LIPSedge 3D camera
+# ROS2 wrapper for OpenNI2 using LIPSedge 3D camera
 1. [Introduction](README.md#Introduction)
 2. [Installation](README.md#Installation)
 3. [Build and launch](README.md#Build-and-launch-this-ROS2-Driver)

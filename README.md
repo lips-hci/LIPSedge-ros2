@@ -24,7 +24,7 @@ If you have any request or need any support, welcome to mail LIPS or submit your
  
 ### Get [LIPSedge SDK](https://www.lips-hci.com/lipssdk) for your camera and install it.
 
-#### For T235/235
+#### For T235/225
 Assume you got latest LIPSedge T235 SDK and install it.
 ```
 $ chmod +x LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2.xz.run
@@ -58,7 +58,7 @@ Finished <<< openni2_camera [9.69s]
 
 Summary: 1 package finished [9.84s]
 ```
-#### For T225/235
+#### For T235/225
 You have to deploy LIPSedge camera driver to system before running launch script.
 ```
 $ cd LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2
@@ -72,7 +72,7 @@ SDK path found: /home/chengt/test/LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.
 Creating lib,calib,OpenNI2 links in /lib/x86_64-linux-gnu
 Finished.
 ```
-Make sure LIPSedge T225/235 driver library has been installed to OpenNI2 Drivers repo in the system, you can see virtual link created for LIPSedge camera driver lib.
+Make sure LIPSedge T235/225 driver library has been installed to OpenNI2 Drivers repo in the system, you can see virtual link created for LIPSedge camera driver lib.
 ```
 # ls -l /lib/x86_64-linux-gnu/OpenNI2/Drivers/
 ```

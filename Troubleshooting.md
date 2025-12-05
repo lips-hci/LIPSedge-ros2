@@ -1,5 +1,5 @@
-* [Error message: "No matching devices have been found"](Toubleshooting.md#No-matching-devices-have-been-found)
-* [CMake Error (find_package): Could not find a package configuration file provided by "camera_info_manager"](Toubleshooting.md#CMake-Error-Could-not-find-package-camera_info_manager)
+* [Error message: "No matching devices have been found"](Toubleshooting.md#no-matching-devices-have-been-found)
+* [CMake Error (find_package): Could not find a package configuration file provided by "camera_info_manager"](Toubleshooting.md#cmakee-error-could-not-find-package-camera_info_manager)
 -----
 ### No matching devices have been found
 

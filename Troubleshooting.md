@@ -5,7 +5,7 @@
 
 - If you launch and see such error message, please try below steps.
 
-  - Download script from LIPS support site. [ros/ros2 helper scripts](https://fbox.lips-hci.com/s/boCcXcJrK8Zg9Kq)
+  - Download helper scripts from folder [scripts](https://github.com/lips-hci/LIPSedge-ros2/tree/ros2/scripts)
   - Place install script inside your camera LIPSedge SDK and run it.
 
 The script file name looks as *install_ros_{camera}_{os version}.sh*, select your camera model and OS version.

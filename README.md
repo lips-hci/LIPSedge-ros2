@@ -1,7 +1,7 @@
-# ROS2 wrapper for OpenNI2 using LIPSedge 3D camera
+# ROS2 wrapper for OpenNI2 using LIPSedge™ 3D camera
 1. [Introduction](README.md#Introduction)
 2. [Installation](README.md#Installation)
-3. [Build and launch](README.md#Build-and-launch-this-ROS2-Driver)
+3. [Build and launch](README.md#Build-wrapper-and-launch-openni2_camera)
 4. [Visualize PointCloud2](README.md#Visualize-PointCloud2-data)
 5. [Troubleshooting](Troubleshooting.md)
 
@@ -11,21 +11,28 @@ Please read original [README](README-iron.md) from repo [ros-driver](https://git
 - ROS1:
 Please check our repository [LIPSedge-ros](https://github.com/lips-hci/LIPSedge-ros) for installation guide.
 
-- ROS2: ros2 branch supports Humble to Iron. We have tested LIPSedge cameras on Humble.
+- ROS2: ros2 branch supports Humble to Iron, but we only tested LIPSedge™ cameras on Humble.
 
 If you have any request or need any support, welcome to mail LIPS or submit your request here.
 
-## Prepare
+## Installation
+
+#### dependent packages
 
  * Install openni2 package for Ubuntu
  ```
  $ sudo apt-get install libopenni2-0 libopenni2-dev
  ```
  
-### Get [LIPSedge SDK](https://www.lips-hci.com/lipssdk) for your camera and install it.
+#### LIPSedge™ camera SDK
 
-#### For T235/225
-Assume you got latest LIPSedge T235 SDK and install it.
+LIPSedge™ camera is OpenNI2 compliant and supports ROS2 platform.
+
+Get [LIPSedge™ SDK](https://www.lips-hci.com/lipssdk) for your camera and install it.
+
+- For LIPSedge™ camera T235
+
+Assume you got latest LIPSedge™ T235 SDK and install it.
 ```
 $ chmod +x LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2.xz.run
 $ ./LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2.xz.run
@@ -35,14 +42,18 @@ Follow steps on screen to finish installation or run below command to install SD
 $ cd LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2
 $ sudo ./install.sh
 ```
-#### For DL/M3/AE4xx/L210
-Assume you got LIPSedge DL SDK and install it.
+
+- For LIPSedge™ camera DL/M3/AE4xx/L210
+
+Assume you got LIPSedge™ DL SDK and install it.
+
 ```
 $ tar -xzf LIPS-Linux-x64-OpenNI2.2.tar.gz
 $ cd LIPS-Linux-x64-OpenNI2.2
 $ sudo ./install.sh
 ```
-## Build wrapper and launch camera in ros2
+
+## Build wrapper and launch openni2_camera
 
 Clone this repository and build it in ROS2 environment
 
@@ -58,12 +69,16 @@ Finished <<< openni2_camera [9.69s]
 
 Summary: 1 package finished [9.84s]
 ```
-#### For T235/225
-You have to deploy LIPSedge camera driver to system before running launch script.
+
+#### For LIPSedge™ T235
+
+You have to deploy LIPSedge™ camera driver to system before running launch script.
+
 ```
 $ cd LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2
 $ source OpenNIDevEnvironment
 ```
+
 Go back to ros workspace source and run helper script.
 ```
 $ cd ~/LIPSedge_ws/src
@@ -72,7 +87,8 @@ SDK path found: /home/chengt/test/LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.
 Creating lib,calib,OpenNI2 links in /lib/x86_64-linux-gnu
 Finished.
 ```
-Make sure LIPSedge T235/225 driver library has been installed to OpenNI2 Drivers repo in the system, you can see virtual link created for LIPSedge camera driver lib.
+
+Make sure LIPSedge™ T235 driver library has been installed to OpenNI2 Drivers repo in the system, you can see virtual link created for LIPSedge™ camera driver lib.
 ```
 # ls -l /lib/x86_64-linux-gnu/OpenNI2/Drivers/
 ```

@@ -2,7 +2,7 @@
 
 1. [Introduction](#introduction)
 2. [Installation](#installation)
-3. [Build and launch](#build-wrapper-and-launch-openni2_camera)
+3. [Build and launch](#build-wrapper-and-launch-driver)
 4. [Visualize PointCloud2](#visualize-pointcloud2-data)
 5. [Troubleshooting](Troubleshooting.md)
 
@@ -33,11 +33,12 @@ Get [LIPSedge™ SDK](https://www.lips-hci.com/lipssdk) for your camera and inst
 
 - For LIPSedge™ camera T235
 
-Assume you got latest LIPSedge™ T235 SDK and install it.
+Download latest LIPSedge™ T235 SDK and install it.
 ```
 $ chmod +x LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2.xz.run
 $ ./LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2.xz.run
 ```
+
 Follow steps on screen to finish installation or run below command to install SDK again.
 ```
 $ cd LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2
@@ -46,7 +47,7 @@ $ sudo ./install.sh
 
 - For LIPSedge™ camera DL/M3/AE4xx/L210
 
-Assume you got LIPSedge™ DL SDK and install it.
+Assume you are installing LIPSedge™ DL SDK.
 
 ```
 $ tar -xzf LIPS-Linux-x64-OpenNI2.2.tar.gz
@@ -54,7 +55,7 @@ $ cd LIPS-Linux-x64-OpenNI2.2
 $ sudo ./install.sh
 ```
 
-## Build wrapper and launch openni2_camera
+## Build wrapper and launch driver
 
 Clone this repository and build it in ROS2 environment
 

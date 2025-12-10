@@ -1,4 +1,5 @@
-# ROS2 wrapper for OpenNI2 using LIPSedge™ 3D camera
+# ROS2 wrapper for OpenNI2 using LIPSedge™ camera
+
 1. [Introduction](README.md#Introduction)
 2. [Installation](README.md#Installation)
 3. [Build and launch](README.md#Build-wrapper-and-launch-openni2_camera)

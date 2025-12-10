@@ -1,9 +1,9 @@
 # ROS2 wrapper for OpenNI2 using LIPSedge™ camera
 
-1. [Introduction](README.md#Introduction)
-2. [Installation](README.md#Installation)
-3. [Build and launch](README.md#Build-wrapper-and-launch-openni2_camera)
-4. [Visualize PointCloud2](README.md#Visualize-PointCloud2-data)
+1. [Introduction](#introduction)
+2. [Installation](#installation)
+3. [Build and launch](#build-wrapper-and-launch-openni2_camera)
+4. [Visualize PointCloud2](#visualize-pointcloud2-data)
 5. [Troubleshooting](Troubleshooting.md)
 
 ## Introduction

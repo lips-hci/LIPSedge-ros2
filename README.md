@@ -60,10 +60,10 @@ $ sudo ./install.sh
 Clone this repository and build it in ROS2 environment
 
 ```
-$ mkdir -p ~/LIPSedge_ws/src
-$ cd ~/LIPSedge_ws/src
+$ mkdir -p ~/ros2_ws/src
+$ cd ~/ros2_ws/src
 $ git clone https://github.com/lips-hci/LIPSedge-ros2
-$ cd ~/LIPSedge_ws
+$ cd ~/ros2_ws
 $ colcon build
 
 Starting >>> openni2_camera
@@ -83,12 +83,13 @@ $ source OpenNIDevEnvironment
 
 Go back to ros workspace source and run helper script.
 ```
-$ cd ~/LIPSedge_ws/src
-$ ./scripts/install_ros_T235_ubuntu22_x64.sh
+$ cd ~/ros2_ws/src/LIPSedge-ros2
+$ sudo -E ./scripts/install_ros_T235_ubuntu22_x64.sh
 SDK path found: /home/chengt/test/LIPSedge-T225-RGBD-SDK-Linux-amd64-2.4.4.3_v0.9.6.2/Redist
 Creating lib,calib,OpenNI2 links in /lib/x86_64-linux-gnu
 Finished.
 ```
+NOTE: The -E (preserve environment) option indicates that the user wishes to preserve their existing environment variables. 
 
 Make sure LIPSedge™ T235 driver library has been installed to OpenNI2 Drivers repo in the system, you can see virtual link created for LIPSedge™ camera driver lib.
 ```

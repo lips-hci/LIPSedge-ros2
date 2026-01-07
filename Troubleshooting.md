@@ -1,6 +1,24 @@
+* [ERROR: Failed to load node 'points_xyzrgb' of type 'depth_image_proc::PointCloudXyzrgbNode' in container '/camera/container'](Troubleshooting.md#failed-to-load-node-points-xyzrgb)
 * [Error message: "No matching devices have been found"](Troubleshooting.md#no-matching-devices-have-been-found)
 * [CMake Error (find_package): Could not find a package configuration file provided by "camera_info_manager"](Troubleshooting.md#cmake-error-could-not-find-package-camera_info_manager)
 -----
+### Failed to load node points xyzrgb
+
+- If you launch 'camera_with_cloud.launch.py' and see such error message.
+
+```
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/camera/driver' in container '/camera/container'                        
+[component_container-1] [ERROR] [1767769325.821649765] [camera.container]: Could not find requested resource in ament index             
+[ERROR] [launch_ros.actions.load_composable_nodes]: *Failed to load node 'points_xyzrgb' of type 'depth_image_proc::PointCloudXyzrgbNode'
+ in container '/camera/container'*: Could not find requested resource in ament index                                                     
+```
+
+- Please use below command to install the missing ros package
+
+```
+$ sudo apt install ros-humble-depth-image-proc
+```
+
 ### No matching devices have been found
 
 - If you launch and see such error message, please try below steps.

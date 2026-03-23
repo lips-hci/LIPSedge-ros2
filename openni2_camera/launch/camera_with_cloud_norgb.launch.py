@@ -64,8 +64,17 @@ def generate_launch_description():
                     namespace=namespace,
                     parameters=[{'depth_registration': False},
                                 {'use_device_time': True},
-                                {'rgb_frame_id': [namespace,"_rgb_optical_frame"]},
+                                ## Depth: Uncomment below to setup Depth video mode.
+                                #{'depth_width':  640},
+                                #{'depth_height':  480},
+                                #{'depth_fps': 30},
+                                #{'depth_pixel_format': 'depth_1mm'},
                                 {'depth_frame_id': [namespace,"_depth_optical_frame"]},
+                                ## IR: Uncomment below to setup IR video mode.
+                                #{'ir_width':  640},
+                                #{'ir_height':  480},
+                                #{'ir_fps': 30},
+                                #{'ir_pixel_format': 'gray8'},
                                 {'ir_frame_id': [namespace,"_ir_optical_frame"]},],
                     remappings=[('depth/image', 'depth_registered/image_raw')],
                 ),

@@ -35,6 +35,8 @@
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/distortion_models.hpp>
 
+#define USE_DEFAULT_SETTINGS  0
+
 namespace openni2_wrapper
 {
 
@@ -61,34 +63,32 @@ OpenNI2Driver::OpenNI2Driver(const rclcpp::NodeOptions & node_options) :
   enable_reconnect_ = declare_parameter<bool>("enable_reconnect", true);
 
   ir_frame_id_ = declare_parameter<std::string>("ir_frame_id", "openni_ir_optical_frame");
-  color_frame_id_ = declare_parameter<std::string>("rgb_frame_id", "openni_rgb_optical_frame");
+  color_frame_id_ = declare_parameter<std::string>("color_frame_id", "openni_color_optical_frame");
   depth_frame_id_ = declare_parameter<std::string>("depth_frame_id", "openni_depth_optical_frame");
 
-  color_info_url_ = declare_parameter<std::string>("rgb_camera_info_url", "");
+  color_info_url_ = declare_parameter<std::string>("color_camera_info_url", "");
   ir_info_url_ = declare_parameter<std::string>("depth_camera_info_url", "");
 
-  genVideoModeTableMap();
-  std::string mode = declare_parameter<std::string>("ir_mode", "VGA_30Hz");
-  if (!lookupVideoMode(mode, ir_video_mode_))
-  {
-    RCLCPP_ERROR(this->get_logger(), "Undefined IR video mode");
-  }
+  // IR Video Mode
+  std::string ir_pixel_format = declare_parameter<std::string>("ir_pixel_format", "");
+  ir_video_mode_.pixel_format_ = retrievePixelFormatFromName(ir_pixel_format);
+  ir_video_mode_.x_resolution_ = declare_parameter<int>("ir_width", USE_DEFAULT_SETTINGS);
+  ir_video_mode_.y_resolution_ = declare_parameter<int>("ir_height", USE_DEFAULT_SETTINGS);
+  ir_video_mode_.frame_rate_ = declare_parameter<int>("ir_fps", USE_DEFAULT_SETTINGS);
 
-  mode = declare_parameter<std::string>("color_mode", "VGA_30Hz");
-  if (!lookupVideoMode(mode, color_video_mode_))
-  {
-    RCLCPP_ERROR(this->get_logger(), "Undefined color video mode");
-  }
+  // Color Video Mode
+  std::string color_pixel_format = declare_parameter<std::string>("color_pixel_format", "");
+  color_video_mode_.pixel_format_ = retrievePixelFormatFromName(color_pixel_format);
+  color_video_mode_.x_resolution_ = declare_parameter<int>("color_width", USE_DEFAULT_SETTINGS);
+  color_video_mode_.y_resolution_ = declare_parameter<int>("color_height", USE_DEFAULT_SETTINGS);
+  color_video_mode_.frame_rate_ = declare_parameter<int>("color_fps", USE_DEFAULT_SETTINGS);
 
-  mode = declare_parameter<std::string>("depth_mode", "VGA_30Hz");
-  if (!lookupVideoMode(mode, depth_video_mode_))
-  {
-    RCLCPP_ERROR(this->get_logger(), "Undefined color video mode");
-  }
-
-  ir_video_mode_.pixel_format_ = PIXEL_FORMAT_GRAY16;
-  color_video_mode_.pixel_format_ = PIXEL_FORMAT_RGB888;
-  depth_video_mode_.pixel_format_ = PIXEL_FORMAT_DEPTH_1_MM;
+  // Depth Video Mode
+  std::string depth_pixel_format = declare_parameter<std::string>("depth_pixel_format", "");
+  depth_video_mode_.pixel_format_ = retrievePixelFormatFromName(depth_pixel_format);
+  depth_video_mode_.x_resolution_ = declare_parameter<int>("depth_width", USE_DEFAULT_SETTINGS);
+  depth_video_mode_.y_resolution_ = declare_parameter<int>("depth_height", USE_DEFAULT_SETTINGS);
+  depth_video_mode_.frame_rate_ = declare_parameter<int>("depth_fps", USE_DEFAULT_SETTINGS);
 
   device_id_ = declare_parameter<std::string>("device_id", "#1");
   if (device_id_ == "#1")
@@ -116,6 +116,7 @@ void OpenNI2Driver::periodic()
   if (!initialized_)
   {
     initDevice();
+    initStreamVideoMode();
     advertiseROSTopics();
     applyConfigToOpenNIDevice();
 
@@ -145,10 +146,9 @@ void OpenNI2Driver::advertiseROSTopics()
   // the depth generator.
   std::lock_guard<std::mutex> lock(connect_mutex_);
 
-  // Asus Xtion PRO does not have an RGB camera
   if (device_->hasColorSensor())
   {
-    pub_color_ = it.advertiseCamera("rgb/image_raw", 1);
+    pub_color_ = it.advertiseCamera("color/image_raw", 1);
   }
 
   if (device_->hasIRSensor())
@@ -165,7 +165,7 @@ void OpenNI2Driver::advertiseROSTopics()
 
   ////////// CAMERA INFO MANAGER
 
-  // The camera names are set to [rgb|depth]_[serial#], e.g. depth_B00367707227042B.
+  // The camera names are set to [color|depth]_[serial#], e.g. depth_B00367707227042B.
   // camera_info_manager substitutes this for ${NAME} in the URL.
   std::string serial_number;
   if (serialnumber_as_name_)
@@ -174,7 +174,7 @@ void OpenNI2Driver::advertiseROSTopics()
     serial_number = device_->getStringID();
 
   std::string color_name, ir_name;
-  color_name = "rgb_"   + serial_number;
+  color_name = "color_"   + serial_number;
   ir_name  = "depth_" + serial_number;
 
   // Load the saved calibrations, if they exist
@@ -272,10 +272,6 @@ void OpenNI2Driver::setDepthVideoMode(const OpenNI2VideoMode& depth_video_mode)
 
 void OpenNI2Driver::applyConfigToOpenNIDevice()
 {
-  setIRVideoMode(ir_video_mode_);
-  setColorVideoMode(color_video_mode_);
-  setDepthVideoMode(depth_video_mode_);
-
   if (device_->isImageRegistrationModeSupported())
   {
     try
@@ -383,14 +379,6 @@ void OpenNI2Driver::colorConnectCb()
 
   if (color_subscribers_ && !device_->isColorStreamStarted())
   {
-    // Can't stream IR and RGB at the same time. Give RGB preference.
-    if (device_->isIRStreamStarted())
-    {
-      RCLCPP_ERROR(this->get_logger(), "Cannot stream RGB and IR at the same time. Streaming RGB only.");
-      RCLCPP_INFO(this->get_logger(), "Stopping IR stream.");
-      device_->stopIRStream();
-    }
-
     device_->setColorFrameCallback(std::bind(&OpenNI2Driver::newColorFrameCallback, this, _1));
 
     RCLCPP_INFO(this->get_logger(), "Starting color stream.");
@@ -409,16 +397,6 @@ void OpenNI2Driver::colorConnectCb()
   {
     RCLCPP_INFO(this->get_logger(), "Stopping color stream.");
     device_->stopColorStream();
-
-    // Start IR if it's been blocked on RGB subscribers
-    bool need_ir = pub_ir_.getNumSubscribers() > 0;
-    if (need_ir && !device_->isIRStreamStarted())
-    {
-      device_->setIRFrameCallback(std::bind(&OpenNI2Driver::newIRFrameCallback, this, _1));
-
-      RCLCPP_INFO(this->get_logger(), "Starting IR stream.");
-      device_->startIRStream();
-    }
   }
 }
 
@@ -468,18 +446,10 @@ void OpenNI2Driver::irConnectCb()
 
   if (ir_subscribers_ && !device_->isIRStreamStarted())
   {
-    // Can't stream IR and RGB at the same time
-    if (device_->isColorStreamStarted())
-    {
-      RCLCPP_ERROR(this->get_logger(), "Cannot stream RGB and IR at the same time. Streaming RGB only.");
-    }
-    else
-    {
-      device_->setIRFrameCallback(std::bind(&OpenNI2Driver::newIRFrameCallback, this, _1));
+    device_->setIRFrameCallback(std::bind(&OpenNI2Driver::newIRFrameCallback, this, _1));
 
-      RCLCPP_INFO(this->get_logger(), "Starting IR stream.");
-      device_->startIRStream();
-    }
+    RCLCPP_INFO(this->get_logger(), "Starting IR stream.");
+    device_->startIRStream();
   }
   else if (!ir_subscribers_ && device_->isIRStreamStarted())
   {
@@ -611,7 +581,7 @@ sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getColorCameraInfo(int wi
     if ( info->width != width )
     {
       // Use uncalibrated values
-      RCLCPP_WARN_ONCE(this->get_logger(), "Image resolution doesn't match calibration of the RGB camera. Using default parameters.");
+      RCLCPP_WARN_ONCE(this->get_logger(), "Image resolution doesn't match calibration of the color camera. Using default parameters.");
       info = getDefaultCameraInfo(width, height, device_->getColorFocalLengthX(), device_->getColorFocalLengthY(),
                                   device_->getColorPrincipalPointX(), device_->getColorPrincipalPointY());
     }
@@ -824,6 +794,69 @@ void OpenNI2Driver::initDevice()
   }
 }
 
+void OpenNI2Driver::initStreamVideoMode()
+{
+  if (device_->hasIRSensor())
+  {
+    OpenNI2VideoMode default_video_mode = device_->getIRVideoMode();
+    if (ir_video_mode_.x_resolution_ == USE_DEFAULT_SETTINGS || ir_video_mode_.y_resolution_ == USE_DEFAULT_SETTINGS)
+    {
+      ir_video_mode_.x_resolution_ = default_video_mode.x_resolution_;
+      ir_video_mode_.y_resolution_ = default_video_mode.y_resolution_;
+    }
+    if (ir_video_mode_.frame_rate_ == USE_DEFAULT_SETTINGS)
+    {
+      ir_video_mode_.frame_rate_ = default_video_mode.frame_rate_;
+    }
+    if (ir_video_mode_.pixel_format_ == PIXEL_FORMAT_USE_DEFAULT)
+    {
+      ir_video_mode_.pixel_format_ = default_video_mode.pixel_format_;
+    }
+    setIRVideoMode(ir_video_mode_);
+    RCLCPP_INFO_STREAM(this->get_logger(), "Current IR Mode: " << device_->getIRVideoMode());
+  }
+
+  if (device_->hasColorSensor())
+  {
+    OpenNI2VideoMode default_video_mode = device_->getColorVideoMode();
+    if (color_video_mode_.x_resolution_ == USE_DEFAULT_SETTINGS || color_video_mode_.y_resolution_ == USE_DEFAULT_SETTINGS)
+    {
+      color_video_mode_.x_resolution_ = default_video_mode.x_resolution_;
+      color_video_mode_.y_resolution_ = default_video_mode.y_resolution_;
+    }
+    if (color_video_mode_.frame_rate_ == USE_DEFAULT_SETTINGS)
+    {
+      color_video_mode_.frame_rate_ = default_video_mode.frame_rate_;
+    }
+    if (color_video_mode_.pixel_format_ == PIXEL_FORMAT_USE_DEFAULT)
+    {
+      color_video_mode_.pixel_format_ = default_video_mode.pixel_format_;
+    }
+    setColorVideoMode(color_video_mode_);
+    RCLCPP_INFO_STREAM(this->get_logger(), "Current Color Mode: " << device_->getColorVideoMode());
+  }
+
+  if (device_->hasDepthSensor())
+  {
+    OpenNI2VideoMode default_video_mode = device_->getDepthVideoMode();
+    if (depth_video_mode_.x_resolution_ == USE_DEFAULT_SETTINGS || depth_video_mode_.y_resolution_ == USE_DEFAULT_SETTINGS)
+    {
+      depth_video_mode_.x_resolution_ = default_video_mode.x_resolution_;
+      depth_video_mode_.y_resolution_ = default_video_mode.y_resolution_;
+    }
+    if (depth_video_mode_.frame_rate_ == USE_DEFAULT_SETTINGS)
+    {
+      depth_video_mode_.frame_rate_ = default_video_mode.frame_rate_;
+    }
+    if (depth_video_mode_.pixel_format_ == PIXEL_FORMAT_USE_DEFAULT)
+    {
+      depth_video_mode_.pixel_format_ = default_video_mode.pixel_format_;
+    }
+    setDepthVideoMode(depth_video_mode_);
+    RCLCPP_INFO_STREAM(this->get_logger(), "Current Depth Mode: " << device_->getDepthVideoMode());
+  }
+}
+
 int OpenNI2Driver::extractBusID(const std::string& uri) const
 {
   // URI format is <vendor ID>/<product ID>@<bus number>/<device number>
@@ -926,131 +959,6 @@ void OpenNI2Driver::monitorConnection()
     device_->stopAllStreams();
     device_.reset();
   }
-}
-
-
-void OpenNI2Driver::genVideoModeTableMap()
-{
-  video_modes_lookup_.clear();
-
-  OpenNI2VideoMode video_mode;
-
-  // SXGA_30Hz
-  video_mode.x_resolution_ = 1280;
-  video_mode.y_resolution_ = 1024;
-  video_mode.frame_rate_ = 30;
-
-  video_modes_lookup_["SXGA_30Hz"] = video_mode;
-
-  // SXGA_15Hz
-  video_mode.x_resolution_ = 1280;
-  video_mode.y_resolution_ = 1024;
-  video_mode.frame_rate_ = 15;
-
-  video_modes_lookup_["SXGA_15hz"] = video_mode;
-
-  // XGA_30Hz
-  video_mode.x_resolution_ = 1280;
-  video_mode.y_resolution_ = 720;
-  video_mode.frame_rate_ = 30;
-
-  video_modes_lookup_["XGA_30Hz"] = video_mode;
-
-  // XGA_15Hz
-  video_mode.x_resolution_ = 1280;
-  video_mode.y_resolution_ = 720;
-  video_mode.frame_rate_ = 15;
-
-  video_modes_lookup_["XGA_15Hz"] = video_mode;
-
-  // VGA_30Hz
-  video_mode.x_resolution_ = 640;
-  video_mode.y_resolution_ = 480;
-  video_mode.frame_rate_ = 30;
-
-  video_modes_lookup_["VGA_30Hz"] = video_mode;
-
-  // VGA_25Hz
-  video_mode.x_resolution_ = 640;
-  video_mode.y_resolution_ = 480;
-  video_mode.frame_rate_ = 25;
-
-  video_modes_lookup_["VGA_25Hz"] = video_mode;
-
-  // QVGA_25Hz
-  video_mode.x_resolution_ = 320;
-  video_mode.y_resolution_ = 240;
-  video_mode.frame_rate_ = 25;
-
-  video_modes_lookup_["QVGA_25Hz"] = video_mode;
-
-  // QVGA_30Hz
-  video_mode.x_resolution_ = 320;
-  video_mode.y_resolution_ = 240;
-  video_mode.frame_rate_ = 30;
-
-  video_modes_lookup_["QVGA_30Hz"] = video_mode;
-
-  // QVGA_60Hz
-  video_mode.x_resolution_ = 320;
-  video_mode.y_resolution_ = 240;
-  video_mode.frame_rate_ = 60;
-
-  video_modes_lookup_["QVGA_60Hz"] = video_mode;
-
-  // QQVGA_25Hz
-  video_mode.x_resolution_ = 160;
-  video_mode.y_resolution_ = 120;
-  video_mode.frame_rate_ = 25;
-
-  video_modes_lookup_["QVGA_25Hz"] = video_mode;
-
-  // QQVGA_30Hz
-  video_mode.x_resolution_ = 160;
-  video_mode.y_resolution_ = 120;
-  video_mode.frame_rate_ = 30;
-
-  video_modes_lookup_["QQVGA_30Hz"] = video_mode;
-
-  // QQVGA_60Hz
-  video_mode.x_resolution_ = 160;
-  video_mode.y_resolution_ = 120;
-  video_mode.frame_rate_ = 60;
-
-  video_modes_lookup_["QQVGA_60Hz"] = video_mode;
-
-  // QQQVGA_30Hz
-  video_mode.x_resolution_ = 80;
-  video_mode.y_resolution_ = 60;
-  video_mode.frame_rate_ = 30;
-
-  video_modes_lookup_["QQQVGA_30Hz"] = video_mode;
-
-  // UXGA_30Hz
-  video_mode.x_resolution_ = 1600;
-  video_mode.y_resolution_ = 1200;
-  video_mode.frame_rate_ = 30;
-
-  video_modes_lookup_["UXGA_30Hz"] = video_mode;
-
-  // LIPSedge-I_720P_30Hz
-  video_mode.x_resolution_ = 1080;
-  video_mode.y_resolution_ = 720;
-  video_mode.frame_rate_ = 30;
-
-  video_modes_lookup_["720P_30Hz"] = video_mode;
-}
-
-bool OpenNI2Driver::lookupVideoMode(const std::string& mode, OpenNI2VideoMode& video_mode)
-{
-  auto it = video_modes_lookup_.find(mode);
-  if (it != video_modes_lookup_.end())
-  {
-    video_mode = it->second;
-    return true;
-  }
-
-  return false;
 }
 
 sensor_msgs::msg::Image::ConstSharedPtr OpenNI2Driver::rawToFloatingPointConversion(sensor_msgs::msg::Image::ConstSharedPtr raw_image)

@@ -72,6 +72,7 @@ private:
   // resolves non-URI device IDs to URIs, e.g. '#1' is resolved to the URI of the first device
   std::string resolveDeviceURI(const std::string& device_id);
   void initDevice();
+  void initStreamVideoMode();
 
   void advertiseROSTopics();
 
@@ -92,9 +93,6 @@ private:
   rcl_interfaces::msg::SetParametersResult paramCb(const std::vector<rclcpp::Parameter> parameters);
 
   void applyConfigToOpenNIDevice();
-
-  void genVideoModeTableMap();
-  bool lookupVideoMode(const std::string& mode, OpenNI2VideoMode& video_mode);
 
   sensor_msgs::msg::Image::ConstSharedPtr rawToFloatingPointConversion(sensor_msgs::msg::Image::ConstSharedPtr raw_image);
 
@@ -156,8 +154,6 @@ private:
 
   bool color_depth_synchronization_;
   bool depth_registration_;
-
-  std::map<std::string, OpenNI2VideoMode> video_modes_lookup_;
 
   // dynamic reconfigure config
   bool auto_exposure_;

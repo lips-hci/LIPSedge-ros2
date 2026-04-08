@@ -90,9 +90,10 @@ OpenNI2Driver::OpenNI2Driver(const rclcpp::NodeOptions & node_options) :
   depth_video_mode_.y_resolution_ = declare_parameter<int>("depth_height", USE_DEFAULT_SETTINGS);
   depth_video_mode_.frame_rate_ = declare_parameter<int>("depth_fps", USE_DEFAULT_SETTINGS);
 
-  device_id_ = declare_parameter<std::string>("device_id", "#1");
-  if (device_id_ == "#1")
+  device_id_ = declare_parameter<std::string>("device_id", "");
+  if (device_id_.empty())
   {
+    device_id_.assign("#1");
     RCLCPP_WARN(this->get_logger(), "device_id is not set! Using first device.");
   }
 
@@ -650,12 +651,10 @@ sensor_msgs::msg::CameraInfo::SharedPtr OpenNI2Driver::getProjectorCameraInfo(in
 
 std::string OpenNI2Driver::resolveDeviceURI(const std::string& device_id)
 {
-  // retrieve available device URIs, they look like this: "1d27/0601@1/5"
-  // which is <vendor ID>/<product ID>@<bus number>/<device number>
-  std::shared_ptr<std::vector<std::string> > available_device_URIs =
-    device_manager_->getConnectedDeviceURIs();
+  // retrieve available device URIs
+  std::shared_ptr<std::vector<std::string>> available_device_URIs = device_manager_->getConnectedDeviceURIs();
 
-  // look for '#<number>' format
+  // look for '#<number>' format (default #1)
   if (device_id.size() > 1 && device_id[0] == '#')
   {
     std::istringstream device_number_str(device_id.substr(1));
@@ -664,99 +663,29 @@ std::string OpenNI2Driver::resolveDeviceURI(const std::string& device_id)
     int device_index = device_number - 1; // #1 refers to first device
     if (device_index >= available_device_URIs->size() || device_index < 0)
     {
-      THROW_OPENNI_EXCEPTION(
-          "Invalid device number %i, there are %zu devices connected.",
-          device_number, available_device_URIs->size());
+      THROW_OPENNI_EXCEPTION("Invalid device number %i, there are %zu devices connected.", device_number, available_device_URIs->size());
     }
     else
     {
       return available_device_URIs->at(device_index);
     }
   }
-  // look for '<bus>@<number>' format
-  //   <bus>    is usb bus id, typically start at 1
-  //   <number> is the device number, for consistency with openni_camera, these start at 1
-  //               although 0 specifies "any device on this bus"
-  else if (device_id.size() > 1 && device_id.find('@') != std::string::npos && device_id.find('/') == std::string::npos)
-  {
-    // get index of @ character
-    size_t index = device_id.find('@');
-    if (index <= 0)
-    {
-      THROW_OPENNI_EXCEPTION(
-        "%s is not a valid device URI, you must give the bus number before the @.",
-        device_id.c_str());
-    }
-    if (index >= device_id.size() - 1)
-    {
-      THROW_OPENNI_EXCEPTION(
-        "%s is not a valid device URI, you must give the device number after the @, specify 0 for any device on this bus",
-        device_id.c_str());
-    }
-
-    // pull out device number on bus
-    std::istringstream device_number_str(device_id.substr(index+1));
-    int device_number;
-    device_number_str >> device_number;
-
-    // reorder to @<bus>
-    std::string bus = device_id.substr(0, index);
-    bus.insert(0, "@");
-
-    for (size_t i = 0; i < available_device_URIs->size(); ++i)
-    {
-      std::string s = (*available_device_URIs)[i];
-      if (s.find(bus) != std::string::npos)
-      {
-        // this matches our bus, check device number
-        std::ostringstream ss;
-        ss << bus << '/' << device_number;
-        if (device_number == 0 || s.find(ss.str()) != std::string::npos)
-          return s;
-      }
-    }
-
-    THROW_OPENNI_EXCEPTION("Device not found %s", device_id.c_str());
-  }
+  // assume the device_id is certain serial number
   else
   {
-    // check if the device id given matches a serial number of a connected device
-    for(std::vector<std::string>::const_iterator it = available_device_URIs->begin();
-        it != available_device_URIs->end(); ++it)
+    RCLCPP_INFO(this->get_logger(), "Note: Device selection through serial number is only supported by LIPSedge-S315.");
+    for (size_t i = 0; i < available_device_URIs->size(); i++)
     {
-      try {
-        std::string serial = device_manager_->getSerial(*it);
-        if (serial.size() > 0 && device_id == serial)
-          return *it;
-      }
-      catch (const OpenNI2Exception& exception)
+      std::string &uri = (*available_device_URIs)[i];
+      if (uri.find("S315") != std::string::npos)
       {
-        RCLCPP_WARN(this->get_logger(), "Could not query serial number of device \"%s\":", exception.what());
-      }
-    }
-
-    // everything else is treated as part of the device_URI
-    bool match_found = false;
-    std::string matched_uri;
-    for (size_t i = 0; i < available_device_URIs->size(); ++i)
-    {
-      std::string s = (*available_device_URIs)[i];
-      if (s.find(device_id) != std::string::npos)
-      {
-        if (!match_found)
+        if (uri.find(device_id) != std::string::npos)
         {
-          matched_uri = s;
-          match_found = true;
-        }
-        else
-        {
-          // more than one match
-          THROW_OPENNI_EXCEPTION("Two devices match the given device id '%s': %s and %s.", device_id.c_str(), matched_uri.c_str(), s.c_str());
+          return uri;
         }
       }
     }
-    if (match_found)
-      return matched_uri;
+    THROW_OPENNI_EXCEPTION("Device (%s) is not found or not supported.", device_id.c_str());
   }
   return "INVALID";
 }

@@ -69,6 +69,9 @@ std::ostream& operator << (std::ostream& stream, const OpenNI2VideoMode& video_m
     case PIXEL_FORMAT_JPEG:
       stream << "JPEG";
       break;
+    case PIXEL_FORMAT_YUYV:
+      stream << "YUYV";
+      break;
 
     default:
       break;
@@ -88,6 +91,54 @@ bool operator==(const OpenNI2VideoMode& video_mode_a, const OpenNI2VideoMode& vi
 bool operator!=(const OpenNI2VideoMode& video_mode_a, const OpenNI2VideoMode& video_mode_b)
 {
   return !(video_mode_a==video_mode_b);
+}
+
+PixelFormat retrievePixelFormatFromName(std::string& pixel_format_name)
+{
+  if (pixel_format_name.compare("depth_1mm") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_DEPTH_1_MM;
+  }
+  else if (pixel_format_name.compare("depth_100um") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_DEPTH_100_UM;
+  }
+  else if (pixel_format_name.compare("shift_9_2") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_SHIFT_9_2;
+  }
+  else if (pixel_format_name.compare("shift_9_3") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_SHIFT_9_3;
+  }
+  else if (pixel_format_name.compare("rgb888") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_RGB888;
+  }
+  else if (pixel_format_name.compare("yuv422") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_YUV422;
+  }
+  else if (pixel_format_name.compare("gray8") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_GRAY8;
+  }
+  else if (pixel_format_name.compare("gray16") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_GRAY16;
+  }
+  else if (pixel_format_name.compare("jpeg") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_JPEG;
+  }
+  else if (pixel_format_name.compare("yuyv") == 0)
+  {
+    return PixelFormat::PIXEL_FORMAT_YUYV;
+  }
+  else
+  {
+    return PixelFormat::PIXEL_FORMAT_USE_DEFAULT;
+  }
 }
 
 } //namespace openni2_wrapper
